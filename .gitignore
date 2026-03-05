@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# PET specific - User data files
+# Note: pet_master.json is safe to commit (contains only salt and hash, no secrets)
+# but you may want to keep it private for privacy
+pet_master.json
