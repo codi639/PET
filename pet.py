@@ -1,5 +1,5 @@
 """
-PET - Python Encryption Tool
+PET - Personal Encryption Tool
 Main entry point - launches CLI or GUI interface.
 """
 
@@ -10,7 +10,7 @@ import argparse
 def main():
     """Main entry point for PET."""
     parser = argparse.ArgumentParser(
-        description="PET - Python Encryption Tool",
+        description="PET - Personal Encryption Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
@@ -32,8 +32,8 @@ def main():
             from interface import run_gui
             run_gui()
         except ImportError as e:
-            print(f"Error: Failed to load GUI. Make sure customtkinter is installed.")
-            print(f"Install with: pip install customtkinter")
+            print("Error: Failed to load GUI. Make sure customtkinter is installed.")
+            print("Install with: pip install customtkinter")
             print(f"\nDetails: {e}")
             sys.exit(1)
     else:

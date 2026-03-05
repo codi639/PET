@@ -1,5 +1,5 @@
 """
-PET - Python Encryption Tool
+PET - Personal Encryption Tool
 Graphical User Interface implementation using CustomTkinter.
 """
 
@@ -355,9 +355,20 @@ class PETApp(ctk.CTk):  # type: ignore[misc]
 
 def run_gui() -> None:
     """Main entry point for GUI interface."""
+    app = None
     try:
         app = PETApp()
         app.mainloop()
     except (ImportError, RuntimeError, OSError) as e:
         messagebox.showerror("Error", f"An error occurred: {e}")
+        if app:
+            app.key_mgr.lock()
         sys.exit(1)
+    except KeyboardInterrupt:
+        if app:
+            app.key_mgr.lock()
+        sys.exit(0)
+    finally:
+        # Ensure key is always cleared on exit
+        if app:
+            app.key_mgr.lock()
