@@ -23,10 +23,33 @@ def main():
         action='store_true',
         help='Launch command line interface (default)'
     )
+    parser.add_argument(
+        '--encrypt',
+        type=str,
+        metavar='FILE',
+        help='Encrypt a file (non-interactive)'
+    )
+    parser.add_argument(
+        '--decrypt',
+        type=str,
+        metavar='FILE',
+        help='Decrypt a file (non-interactive)'
+    )
+    parser.add_argument(
+        '-o', '--output',
+        type=str,
+        metavar='FILE',
+        help='Output file path (optional)'
+    )
+    parser.add_argument(
+        '--delete',
+        action='store_true',
+        help='Delete original file after encryption/decryption'
+    )
 
     args = parser.parse_args()
 
-    # Default to CLI if no option specified
+    # GUI mode
     if args.gui:
         try:
             from interface import run_gui
@@ -36,6 +59,12 @@ def main():
             print("Install with: pip install customtkinter")
             print(f"\nDetails: {e}")
             sys.exit(1)
+    # Encrypt or decrypt mode (uses CLI backend)
+    elif args.encrypt or args.decrypt:
+        from interface import run_cli
+        # run_cli will handle the encrypt/decrypt arguments via sys.argv
+        run_cli()
+    # Default to CLI
     else:
         from interface import run_cli
         run_cli()

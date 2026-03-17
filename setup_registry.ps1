@@ -33,21 +33,23 @@ try {
         exit 1
     }
 
-    # Find gui_tray.py
-    $guiTrayPath = Join-Path $scriptDir "interface\gui_tray.py"
-    if (-not (Test-Path $guiTrayPath)) {
-        Write-Status "Error: gui_tray.py not found at $guiTrayPath" "Error"
+    # Find pet.py (main entry point)
+    #$petPath = Join-Path $scriptDir "interface\gui_tray.py"
+    $petPath = Join-Path $scriptDir "pet.py"
+    if (-not (Test-Path $petPath)) {
+        Write-Status "Error: pet.py not found at $petPath" "Error"
         exit 1
     }
 
-    # Registry base path
-    $regBase = "HKCU:\Software\Classes"
+    # Registry base path - using Software\Classes for context menus
+    #$regBase = "HKCU:\Software\Classes"
+    $regBase = "HKCU:"
 
     if ($Uninstall) {
         Write-Status "`nUninstalling PET Context Menus..." "Warning"
         Write-Host "========================================="
 
-        # Remove Encrypt from all files
+        # Remove Encrypt from all files (*\shell)
         $encryptPath = "$regBase\*\shell\PETCMD_Encrypt"
         if (Test-Path $encryptPath) {
             Remove-Item -Path $encryptPath -Recurse -Force -ErrorAction SilentlyContinue
@@ -70,10 +72,10 @@ try {
     Write-Status "`nPET Context Menu Setup" "Warning"
     Write-Host "========================================="
     Write-Host "`nPython: $pythonPath"
-    Write-Host "Script: $guiTrayPath`n"
+    Write-Host "Script: $petPath`n"
 
-    # Create AllFiles shell key if needed
-    $allFilesPath = "$regBase\AllFiles\Shell"
+    # Create * (all files) shell key if needed
+    $allFilesPath = "$regBase\*\shell"
     if (-not (Test-Path $allFilesPath)) {
         New-Item -Path $allFilesPath -Force | Out-Null
     }
@@ -85,24 +87,24 @@ try {
 
     $encryptCmd = "$encryptPath\command"
     New-Item -Path $encryptCmd -Force | Out-Null
-    $encryptCommand = "`"$pythonPath`" `"$guiTrayPath`" --encrypt `"%1`""
+    $encryptCommand = "`"$pythonPath`" `"$petPath`" --encrypt `"%1`""
     New-ItemProperty -Path $encryptCmd -Name "(Default)" -Value $encryptCommand -Force | Out-Null
     Write-Status "Added: Encrypt with PET" "Success"
 
     # Create .pet files shell key if needed
-    $petPath = "$regBase\.pet\Shell"
-    if (-not (Test-Path $petPath)) {
-        New-Item -Path $petPath -Force | Out-Null
+    $petFilesPath = "$regBase\.pet\shell"
+    if (-not (Test-Path $petFilesPath)) {
+        New-Item -Path $petFilesPath -Force | Out-Null
     }
 
     # Add Decrypt option
-    $decryptPath = "$petPath\PETCMD_Decrypt"
+    $decryptPath = "$petFilesPath\PETCMD_Decrypt"
     New-Item -Path $decryptPath -Force | Out-Null
     New-ItemProperty -Path $decryptPath -Name "(Default)" -Value "Decrypt with PET" -Force | Out-Null
 
     $decryptCmd = "$decryptPath\command"
     New-Item -Path $decryptCmd -Force | Out-Null
-    $decryptCommand = "`"$pythonPath`" `"$guiTrayPath`" --decrypt `"%1`""
+    $decryptCommand = "`"$pythonPath`" `"$petPath`" --decrypt `"%1`""
     New-ItemProperty -Path $decryptCmd -Name "(Default)" -Value $decryptCommand -Force | Out-Null
     Write-Status "Added: Decrypt with PET" "Success"
 

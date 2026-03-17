@@ -26,9 +26,9 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         self.file_path = file_path
         self.operation = operation  # "encrypt" or "decrypt"
         self.locked = True
-        
+
         self.setup_window()
-        
+
         # Try to unlock if we have a file to process
         if self.file_path:
             self.authenticate_and_process()
@@ -60,7 +60,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         if not self.key_mgr.is_initialized():
             self.show_setup_screen()
             return
-        
+
         # Unlock with master password
         self.show_unlock_screen()
 
@@ -247,10 +247,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             title="Select file to encrypt",
             parent=self
         )
-        
+
         if not file_path:
             return
-        
+
         self.file_path = file_path
         self.operation = "encrypt"
         self.show_encrypt_options()
@@ -262,10 +262,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             filetypes=[(f"PET Files (*{PET_EXTENSION})", f"*{PET_EXTENSION}"), ("All Files", "*.*")],
             parent=self
         )
-        
+
         if not file_path:
             return
-        
+
         if not file_path.lower().endswith(PET_EXTENSION):
             response = messagebox.askyesno(
                 "Warning",
@@ -273,7 +273,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             )
             if not response:
                 return
-        
+
         self.file_path = file_path
         self.operation = "decrypt"
         self.show_decrypt_options()
@@ -282,10 +282,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         """Show encryption options dialog."""
         if not self.file_path:
             return
-        
+
         # Create output path suggestion
         output_path = self.file_path + PET_EXTENSION
-        
+
         # Ask about output location
         output_file = filedialog.asksaveasfilename(
             title="Save encrypted file as",
@@ -295,10 +295,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             filetypes=[("PET Files", f"*{PET_EXTENSION}"), ("All Files", "*.*")],
             parent=self
         )
-        
+
         if not output_file:
             return
-        
+
         # Check if file exists
         if Path(output_file).exists():
             response = messagebox.askyesno(
@@ -312,7 +312,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             except OSError as e:
                 messagebox.showerror("Error", f"Could not delete existing file: {e}")
                 return
-        
+
         # Perform encryption
         self.perform_encryption(output_file)
 
@@ -320,13 +320,13 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         """Show decryption options dialog."""
         if not self.file_path:
             return
-        
+
         # Determine default output
         if self.file_path.lower().endswith(PET_EXTENSION):
             default_output = self.file_path[:-len(PET_EXTENSION)]
         else:
             default_output = self.file_path + ".decrypted"
-        
+
         # Ask about output location
         output_file = filedialog.asksaveasfilename(
             title="Save decrypted file as",
@@ -335,10 +335,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             filetypes=[("All Files", "*.*")],
             parent=self
         )
-        
+
         if not output_file:
             return
-        
+
         # Check if file exists
         if Path(output_file).exists():
             response = messagebox.askyesno(
@@ -352,7 +352,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             except OSError as e:
                 messagebox.showerror("Error", f"Could not delete existing file: {e}")
                 return
-        
+
         # Perform decryption
         self.perform_decryption(output_file)
 
@@ -360,7 +360,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         """Perform file encryption."""
         if not self.file_path:
             return
-        
+
         encryption_key = self.key_mgr.get_encryption_key()
         if not encryption_key:
             messagebox.showerror("Error", "Encryption key not available.")
