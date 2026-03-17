@@ -4,9 +4,12 @@ Graphical User Interface implementation using CustomTkinter.
 """
 
 import sys
-from tkinter import messagebox
+from pathlib import Path
+from tkinter import messagebox, filedialog
 import customtkinter as ctk
 from auth.master_key import MasterKeyManager
+from encryption import encrypt_file, decrypt_file, PET_EXTENSION
+from encryption.file_crypto import EncryptionError, DecryptionError
 
 
 class PETApp(ctk.CTk):  # type: ignore[misc]
@@ -274,12 +277,178 @@ class PETApp(ctk.CTk):  # type: ignore[misc]
         lock_btn.grid(row=4, column=0, padx=20, pady=(30, 20))
 
     def encrypt_file(self) -> None:
-        """Handle file encryption (placeholder)."""
-        messagebox.showinfo("Coming Soon", "File encryption feature coming soon!")
+        """Handle file encryption with file dialog."""
+        # Open file dialog to select file to encrypt
+        file_path = filedialog.askopenfilename(
+            title="Select file to encrypt",
+            parent=self
+        )
+        
+        if not file_path:
+            return  # User cancelled
+        
+        # Check if file is already encrypted
+        if file_path.lower().endswith(PET_EXTENSION):
+            messagebox.showerror(
+                "Error",
+                f"File is already encrypted (has {PET_EXTENSION} extension)."
+            )
+            return
+        
+        # Get output path from save dialog
+        output_file = filedialog.asksaveasfilename(
+            title="Save encrypted file as",
+            defaultextension=PET_EXTENSION,
+            initialfile=Path(file_path).name + PET_EXTENSION,
+            filetypes=[("PET Files", f"*{PET_EXTENSION}"), ("All Files", "*.*")],
+            parent=self
+        )
+        
+        if not output_file:
+            return  # User cancelled
+        
+        # Check if output file already exists
+        if Path(output_file).exists():
+            response = messagebox.askyesno(
+                "File exists",
+                f"File already exists. Overwrite it?"
+            )
+            if not response:
+                return
+            try:
+                Path(output_file).unlink()
+            except OSError as e:
+                messagebox.showerror("Error", f"Could not delete existing file: {e}")
+                return
+        
+        # Get encryption key
+        encryption_key = self.key_mgr.get_encryption_key()
+        if not encryption_key:
+            messagebox.showerror("Error", "Encryption key not available. Please unlock first.")
+            return
+        
+        try:
+            # Show progress
+            encrypt_file(file_path, output_file, encryption_key)
+            
+            # Ask if user wants to delete original file
+            response = messagebox.askyesno(
+                "Success",
+                f"File encrypted successfully!\n\nDelete original file?"
+            )
+            
+            if response:
+                try:
+                    Path(file_path).unlink()
+                    messagebox.showinfo("Success", "Original file deleted.")
+                except OSError as e:
+                    messagebox.showwarning(
+                        "Warning",
+                        f"File encrypted but could not delete original: {e}"
+                    )
+            else:
+                messagebox.showinfo(
+                    "Success",
+                    f"File encrypted successfully!\n\nEncrypted file: {output_file}"
+                )
+        
+        except FileNotFoundError:
+            messagebox.showerror("Error", "Input file not found.")
+        except EncryptionError as e:
+            messagebox.showerror("Encryption Error", f"Failed to encrypt file: {e}")
+        except (OSError, ValueError) as e:
+            messagebox.showerror("Error", f"Unexpected error: {e}")
 
     def decrypt_file(self) -> None:
-        """Handle file decryption (placeholder)."""
-        messagebox.showinfo("Coming Soon", "File decryption feature coming soon!")
+        """Handle file decryption with file dialog."""
+        # Open file dialog to select file to decrypt
+        file_path = filedialog.askopenfilename(
+            title="Select file to decrypt",
+            filetypes=[(f"PET Files (*{PET_EXTENSION})", f"*{PET_EXTENSION}"), ("All Files", "*.*")],
+            parent=self
+        )
+        
+        if not file_path:
+            return  # User cancelled
+        
+        # Warn if not a .pet file
+        if not file_path.lower().endswith(PET_EXTENSION):
+            response = messagebox.askyesno(
+                "Warning",
+                f"File does not have {PET_EXTENSION} extension.\n\nContinue anyway?"
+            )
+            if not response:
+                return
+        
+        # Determine default output path
+        if file_path.lower().endswith(PET_EXTENSION):
+            default_output = file_path[:-len(PET_EXTENSION)]
+        else:
+            default_output = file_path + ".decrypted"
+        
+        # Get output path from save dialog
+        output_file = filedialog.asksaveasfilename(
+            title="Save decrypted file as",
+            initialfile=Path(default_output).name,
+            initialdir=Path(default_output).parent,
+            filetypes=[("All Files", "*.*")],
+            parent=self
+        )
+        
+        if not output_file:
+            return  # User cancelled
+        
+        # Check if output file already exists
+        if Path(output_file).exists():
+            response = messagebox.askyesno(
+                "File exists",
+                f"File already exists. Overwrite it?"
+            )
+            if not response:
+                return
+            try:
+                Path(output_file).unlink()
+            except OSError as e:
+                messagebox.showerror("Error", f"Could not delete existing file: {e}")
+                return
+        
+        # Get encryption key
+        encryption_key = self.key_mgr.get_encryption_key()
+        if not encryption_key:
+            messagebox.showerror("Error", "Encryption key not available. Please unlock first.")
+            return
+        
+        try:
+            # Decrypt file
+            decrypt_file(file_path, output_file, encryption_key, overwrite=True)
+            
+            # Ask if user wants to delete encrypted file
+            response = messagebox.askyesno(
+                "Success",
+                f"File decrypted successfully!\n\nDelete encrypted file?"
+            )
+            
+            if response:
+                try:
+                    Path(file_path).unlink()
+                    messagebox.showinfo("Success", "Encrypted file deleted.")
+                except OSError as e:
+                    messagebox.showwarning(
+                        "Warning",
+                        f"File decrypted but could not delete encrypted file: {e}"
+                    )
+            else:
+                messagebox.showinfo(
+                    "Success",
+                    f"File decrypted successfully!\n\nDecrypted file: {output_file}"
+                )
+        
+        except FileNotFoundError:
+            messagebox.showerror("Error", "Input file not found.")
+        except DecryptionError as e:
+            messagebox.showerror("Decryption Error", f"Failed to decrypt file: {e}")
+        except (OSError, ValueError) as e:
+            messagebox.showerror("Error", f"Unexpected error: {e}")
 
     def show_change_password(self) -> None:
         """Display change password dialog."""

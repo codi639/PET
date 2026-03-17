@@ -4,11 +4,141 @@ Command Line Interface implementation.
 """
 
 import sys
+import argparse
 import getpass
 from pathlib import Path
 from auth.master_key import MasterKeyManager
 from encryption import encrypt_file, decrypt_file, PET_EXTENSION
 from encryption.file_crypto import EncryptionError, DecryptionError
+
+
+def encrypt_file_non_interactive(key_mgr: MasterKeyManager, input_path: str, output_path: str | None = None, delete_original: bool = False) -> bool:
+    """
+    Encrypt a file without user interaction.
+    
+    Args:
+        key_mgr: Master key manager instance
+        input_path: Path to file to encrypt
+        output_path: Optional output path. If None, uses input_path + .pet
+        delete_original: Whether to delete original file after encryption
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    # Remove quotes if present
+    input_path = input_path.strip('"').strip("'")
+    
+    # Check if file exists
+    if not Path(input_path).exists():
+        print(f"Error: File not found: {input_path}")
+        return False
+    
+    # Check if it's already encrypted
+    if input_path.lower().endswith(PET_EXTENSION):
+        print(f"Error: File is already encrypted (has {PET_EXTENSION} extension).")
+        return False
+    
+    # Determine output path
+    if output_path is None:
+        output_path = input_path + PET_EXTENSION
+    else:
+        output_path = output_path.strip('"').strip("'")
+    
+    # Check if output already exists
+    if Path(output_path).exists():
+        print(f"Error: Output file already exists: {output_path}")
+        return False
+    
+    # Get encryption key
+    encryption_key = key_mgr.get_encryption_key()
+    if not encryption_key:
+        print("Error: Encryption key not available. Please unlock first.")
+        return False
+    
+    try:
+        encrypt_file(input_path, output_path, encryption_key)
+        print(f"Success: File encrypted: {output_path}")
+        
+        if delete_original:
+            try:
+                Path(input_path).unlink()
+                print("Success: Original file deleted")
+            except OSError as e:
+                print(f"Warning: Could not delete original file: {e}")
+        
+        return True
+        
+    except (EncryptionError, FileNotFoundError, OSError, ValueError) as e:
+        print(f"Error: Encryption failed: {e}")
+        return False
+
+
+def decrypt_file_non_interactive(key_mgr: MasterKeyManager, input_path: str, output_path: str | None = None, delete_original: bool = False, overwrite: bool = False) -> bool:
+    """
+    Decrypt a file without user interaction.
+    
+    Args:
+        key_mgr: Master key manager instance
+        input_path: Path to encrypted file
+        output_path: Optional output path. If None, removes .pet extension
+        delete_original: Whether to delete encrypted file after decryption
+        overwrite: Whether to overwrite existing output file
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    # Remove quotes if present
+    input_path = input_path.strip('"').strip("'")
+    
+    # Check if file exists
+    if not Path(input_path).exists():
+        print(f"Error: File not found: {input_path}")
+        return False
+    
+    # Determine output path
+    if output_path is None:
+        if input_path.lower().endswith(PET_EXTENSION):
+            output_path = input_path[:-len(PET_EXTENSION)]
+        else:
+            output_path = input_path + ".decrypted"
+    else:
+        output_path = output_path.strip('"').strip("'")
+    
+    # Check if output already exists
+    if Path(output_path).exists() and not overwrite:
+        print(f"Error: Output file already exists: {output_path}")
+        return False
+    
+    # Delete existing file if overwrite is True
+    if Path(output_path).exists() and overwrite:
+        try:
+            Path(output_path).unlink()
+        except OSError as e:
+            print(f"Error: Could not delete existing file: {e}")
+            return False
+    
+    # Get encryption key
+    encryption_key = key_mgr.get_encryption_key()
+    if not encryption_key:
+        print("Error: Encryption key not available. Please unlock first.")
+        return False
+    
+    try:
+        decrypt_file(input_path, output_path, encryption_key, overwrite=overwrite)
+        print(f"Success: File decrypted: {output_path}")
+        
+        if delete_original:
+            try:
+                Path(input_path).unlink()
+                print("Success: Encrypted file deleted")
+            except OSError as e:
+                print(f"Warning: Could not delete encrypted file: {e}")
+        
+        return True
+        
+    except (DecryptionError, FileNotFoundError, OSError, ValueError) as e:
+        print(f"Error: Decryption failed: {e}")
+        return False
 
 
 def setup_master_password_cli(key_mgr: MasterKeyManager) -> bool:
@@ -243,8 +373,44 @@ def change_master_password_cli(key_mgr: MasterKeyManager):
 
 def run_cli():
     """Main entry point for CLI interface."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="PET - Python Encryption Tool",
+        prog="pet"
+    )
+    parser.add_argument(
+        "--encrypt",
+        type=str,
+        metavar="FILE",
+        help="Encrypt a file (non-interactive mode)"
+    )
+    parser.add_argument(
+        "--decrypt",
+        type=str,
+        metavar="FILE",
+        help="Decrypt a file (non-interactive mode)"
+    )
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        metavar="FILE",
+        help="Output file path (optional)"
+    )
+    parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="Delete original file after encryption/decryption"
+    )
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Launch GUI application"
+    )
+    
+    args = parser.parse_args()
+    
     key_mgr = MasterKeyManager()
-
+    
     try:
         # First time setup if not initialized
         if not key_mgr.is_initialized():
@@ -254,11 +420,34 @@ def run_cli():
         else:
             # Unlock with master password
             if not unlock_with_master_password_cli(key_mgr):
-                print("\nAuthentication failed. Exiting.")
+                print("Authentication failed. Exiting.")
                 key_mgr.lock()
                 sys.exit(1)
-
-        # Show main menu
+        
+        # Handle encrypt mode
+        if args.encrypt:
+            success = encrypt_file_non_interactive(
+                key_mgr,
+                args.encrypt,
+                args.output,
+                args.delete
+            )
+            key_mgr.lock()
+            sys.exit(0 if success else 1)
+        
+        # Handle decrypt mode
+        if args.decrypt:
+            success = decrypt_file_non_interactive(
+                key_mgr,
+                args.decrypt,
+                args.output,
+                args.delete,
+                overwrite=False
+            )
+            key_mgr.lock()
+            sys.exit(0 if success else 1)
+        
+        # Interactive mode (default)
         main_menu_cli(key_mgr)
 
     except KeyboardInterrupt:
@@ -267,7 +456,7 @@ def run_cli():
         key_mgr.lock()
         sys.exit(0)
     except (OSError, ValueError, RuntimeError) as e:
-        print(f"\nAn error occurred: {e}")
+        print(f"An error occurred: {e}")
         key_mgr.lock()
         sys.exit(1)
     finally:
