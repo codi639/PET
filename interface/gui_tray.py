@@ -3,6 +3,10 @@ PET - Personal Encryption Tool
 Minimal GUI for system tray and context menu operations.
 """
 
+##################################
+#           DEPRECATED           #
+##################################
+
 import sys
 import argparse
 from pathlib import Path
@@ -364,6 +368,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         encryption_key = self.key_mgr.get_encryption_key()
         if not encryption_key:
             messagebox.showerror("Error", "Encryption key not available.")
+            self.lock_and_exit()
             return
         
         try:
@@ -378,16 +383,14 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             if response:
                 try:
                     Path(self.file_path).unlink()
-                    messagebox.showinfo("Success", "Original file deleted.")
                 except OSError as e:
                     messagebox.showwarning("Warning", f"Could not delete original: {e}")
             
-            self.file_path = None
-            self.show_main_screen()
+            self.lock_and_exit()
         
         except (EncryptionError, FileNotFoundError, OSError, ValueError) as e:
             messagebox.showerror("Encryption Error", f"Failed to encrypt: {e}")
-            self.file_path = None
+            self.lock_and_exit()
 
     def perform_decryption(self, output_path: str) -> None:
         """Perform file decryption."""
@@ -397,6 +400,7 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         encryption_key = self.key_mgr.get_encryption_key()
         if not encryption_key:
             messagebox.showerror("Error", "Encryption key not available.")
+            self.lock_and_exit()
             return
         
         try:
@@ -411,16 +415,14 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             if response:
                 try:
                     Path(self.file_path).unlink()
-                    messagebox.showinfo("Success", "Encrypted file deleted.")
                 except OSError as e:
                     messagebox.showwarning("Warning", f"Could not delete encrypted: {e}")
             
-            self.file_path = None
-            self.show_main_screen()
+            self.lock_and_exit()
         
         except (DecryptionError, FileNotFoundError, OSError, ValueError) as e:
             messagebox.showerror("Decryption Error", f"Failed to decrypt: {e}")
-            self.file_path = None
+            self.lock_and_exit()
 
     def process_file(self) -> None:
         """Process file based on operation (called from command-line args)."""
@@ -433,9 +435,23 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             return
         
         if self.operation == "encrypt":
-            self.show_encrypt_options()
+            # Direct encryption without file dialogs
+            output_path = self.file_path + PET_EXTENSION
+            if Path(output_path).exists():
+                try:
+                    Path(output_path).unlink()
+                except OSError as e:
+                    messagebox.showerror("Error", f"Could not delete existing file: {e}")
+                    self.lock_and_exit()
+                    return
+            self.perform_encryption(output_path)
         elif self.operation == "decrypt":
-            self.show_decrypt_options()
+            # Direct decryption without file dialogs
+            if self.file_path.lower().endswith(PET_EXTENSION):
+                output_path = self.file_path[:-len(PET_EXTENSION)]
+            else:
+                output_path = self.file_path + ".decrypted"
+            self.perform_decryption(output_path)
         else:
             self.show_main_screen()
 

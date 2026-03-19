@@ -59,11 +59,16 @@ def main():
             print("Install with: pip install customtkinter")
             print(f"\nDetails: {e}")
             sys.exit(1)
-    # Encrypt or decrypt mode (uses CLI backend)
+    # Encrypt or decrypt mode (uses GUI tray)
     elif args.encrypt or args.decrypt:
-        from interface import run_cli
-        # run_cli will handle the encrypt/decrypt arguments via sys.argv
-        run_cli()
+        try:
+            from interface import run_gui_tray
+            run_gui_tray()
+        except ImportError as e:
+            print("Error: Failed to load GUI. Make sure customtkinter is installed.")
+            print("Install with: pip install customtkinter")
+            print(f"\nDetails: {e}")
+            sys.exit(1)
     # Default to CLI
     else:
         from interface import run_cli
