@@ -7,6 +7,8 @@ param(
     [switch]$Uninstall
 )
 
+#Set-PSDebug -Trace 1
+
 # Color function for output
 function Write-Status {
     param([string]$Message, [string]$Status)
@@ -42,8 +44,8 @@ try {
     }
 
     # Registry base path - using Software\Classes for context menus
-    #$regBase = "HKCU:\Software\Classes"
-    $regBase = "HKCU:"
+    $regBase = "HKCU:\Software\Classes"
+    #$regBase = "HKCU:"
 
     if ($Uninstall) {
         Write-Status "`nUninstalling PET Context Menus..." "Warning"
@@ -83,12 +85,14 @@ try {
     # Add Encrypt option
     $encryptPath = "$allFilesPath\PETCMD_Encrypt"
     New-Item -Path $encryptPath -Force | Out-Null
-    New-ItemProperty -Path $encryptPath -Name "(Default)" -Value "Encrypt with PET" -Force | Out-Null
+    #New-ItemProperty -Path $encryptPath -Name "(Default)" -Value "Encrypt with PET" -Force | Out-Null
+    New-Item -Path $encryptPath -Value "Encrypt with PET" -Force | Out-Null
 
     $encryptCmd = "$encryptPath\command"
     New-Item -Path $encryptCmd -Force | Out-Null
     $encryptCommand = "`"$pythonPath`" `"$petPath`" --encrypt `"%1`""
-    New-ItemProperty -Path $encryptCmd -Name "(Default)" -Value $encryptCommand -Force | Out-Null
+    #New-ItemProperty -Path $encryptCmd -Name "(Default)" -Value $encryptCommand -Force | Out-Null
+    New-Item -Path $encryptCmd -Value $encryptCommand -Force | Out-Null
     Write-Status "Added: Encrypt with PET" "Success"
 
     # Create .pet files shell key if needed
@@ -100,12 +104,14 @@ try {
     # Add Decrypt option
     $decryptPath = "$petFilesPath\PETCMD_Decrypt"
     New-Item -Path $decryptPath -Force | Out-Null
-    New-ItemProperty -Path $decryptPath -Name "(Default)" -Value "Decrypt with PET" -Force | Out-Null
+    #New-ItemProperty -Path $decryptPath -Name "(Default)" -Value "Decrypt with PET" -Force | Out-Null
+    New-Item -Path $decryptPath -Value "Decrypt with PET" -Force | Out-Null
 
     $decryptCmd = "$decryptPath\command"
     New-Item -Path $decryptCmd -Force | Out-Null
     $decryptCommand = "`"$pythonPath`" `"$petPath`" --decrypt `"%1`""
-    New-ItemProperty -Path $decryptCmd -Name "(Default)" -Value $decryptCommand -Force | Out-Null
+    #New-ItemProperty -Path $decryptCmd -Name "(Default)" -Value $decryptCommand -Force | Out-Null
+    New-Item -Path $decryptCmd -Value $decryptCommand -Force | Out-Null
     Write-Status "Added: Decrypt with PET" "Success"
 
     Write-Host "`n========================================="
@@ -121,3 +127,5 @@ catch {
     Write-Status "`nError: $($_.Exception.Message)" "Error"
     exit 1
 }
+
+#Set-PSDebug -Off
