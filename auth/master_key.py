@@ -7,14 +7,47 @@ import hashlib
 import os
 import json
 from typing import Optional
+from pathlib import Path
 
 
 class MasterKeyManager:
     """Manages master password and derives encryption keys."""
 
+    # Centralized master directory path
+    @staticmethod
+    def get_master_dir() -> Path:
+        """
+        Get the centralized Master directory path.
+        
+        Returns:
+            Path to Master directory (platform-specific)
+        """
+        if os.name == 'nt':  # Windows
+            # Use %APPDATA%\PET_Master
+            appdata = os.getenv('APPDATA', os.path.expanduser('~'))
+            master_dir = Path(appdata) / 'PET_Master'
+        else:  # Linux, macOS, etc.
+            # Use ~/.pet_master
+            master_dir = Path.home() / '.pet_master'
+        
+        return master_dir
+
     def __init__(self, config_file: str = "pet_master.json"):
-        """Initialize master key manager."""
-        self.config_file = config_file
+        """
+        Initialize master key manager.
+        
+        Args:
+            config_file: Config filename (default: pet_master.json)
+                        If just a filename is provided, it will be placed in the Master directory.
+                        If a full path is provided, it will be used as-is.
+        """
+        # If config_file is just a filename, place it in the Master directory
+        if os.path.dirname(config_file) == '':
+            master_dir = self.get_master_dir()
+            self.config_file = str(master_dir / config_file)
+        else:
+            self.config_file = config_file
+        
         self.master_key: Optional[bytes] = None
 
     def _derive_key(self, password: str, salt: bytes, iterations: int = 100000) -> bytes:
@@ -47,6 +80,10 @@ class MasterKeyManager:
         """
         if self.is_initialized():
             return False
+
+        # Ensure Master directory exists
+        config_dir = Path(self.config_file).parent
+        config_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate random salt
         salt = os.urandom(32)

@@ -53,15 +53,17 @@ try {
 
         # Remove Encrypt from all files (*\shell)
         $encryptPath = "$regBase\*\shell\PETCMD_Encrypt"
-        if (Test-Path $encryptPath) {
-            Remove-Item -Path $encryptPath -Recurse -Force -ErrorAction SilentlyContinue
+        write-host $encryptPath
+        if (Test-Path -LiteralPath $encryptPath) {
+            Remove-Item -LiteralPath $encryptPath -Recurse -Force -ErrorAction SilentlyContinue
             Write-Status "Removed: Encrypt with PET" "Success"
         }
 
         # Remove Decrypt from .pet files
         $decryptPath = "$regBase\.pet\shell\PETCMD_Decrypt"
-        if (Test-Path $decryptPath) {
-            Remove-Item -Path $decryptPath -Recurse -Force -ErrorAction SilentlyContinue
+        write-host $decryptPath
+        if (Test-Path -LiteralPath $decryptPath) {
+            Remove-Item -LiteralPath $decryptPath -Recurse -Force -ErrorAction SilentlyContinue
             Write-Status "Removed: Decrypt with PET" "Success"
         }
 
@@ -85,13 +87,13 @@ try {
     # Add Encrypt option
     $encryptPath = "$allFilesPath\PETCMD_Encrypt"
     New-Item -Path $encryptPath -Force | Out-Null
-    #New-ItemProperty -Path $encryptPath -Name "(Default)" -Value "Encrypt with PET" -Force | Out-Null
     New-Item -Path $encryptPath -Value "Encrypt with PET" -Force | Out-Null
+    # Enable multi-select batching
+    #New-ItemProperty -Path $encryptPath -Name "MultiSelectModel" -Value "Player" -Force | Out-Null
 
     $encryptCmd = "$encryptPath\command"
     New-Item -Path $encryptCmd -Force | Out-Null
     $encryptCommand = "`"$pythonPath`" `"$petPath`" --encrypt `"%1`""
-    #New-ItemProperty -Path $encryptCmd -Name "(Default)" -Value $encryptCommand -Force | Out-Null
     New-Item -Path $encryptCmd -Value $encryptCommand -Force | Out-Null
     Write-Status "Added: Encrypt with PET" "Success"
 
@@ -104,13 +106,13 @@ try {
     # Add Decrypt option
     $decryptPath = "$petFilesPath\PETCMD_Decrypt"
     New-Item -Path $decryptPath -Force | Out-Null
-    #New-ItemProperty -Path $decryptPath -Name "(Default)" -Value "Decrypt with PET" -Force | Out-Null
     New-Item -Path $decryptPath -Value "Decrypt with PET" -Force | Out-Null
+    # Enable multi-select batching
+    #New-ItemProperty -Path $decryptPath -Name "MultiSelectModel" -Value "Player" -Force | Out-Null
 
     $decryptCmd = "$decryptPath\command"
     New-Item -Path $decryptCmd -Force | Out-Null
     $decryptCommand = "`"$pythonPath`" `"$petPath`" --decrypt `"%1`""
-    #New-ItemProperty -Path $decryptCmd -Name "(Default)" -Value $decryptCommand -Force | Out-Null
     New-Item -Path $decryptCmd -Value $decryptCommand -Force | Out-Null
     Write-Status "Added: Decrypt with PET" "Success"
 

@@ -20,8 +20,16 @@ from encryption import encrypt_file, decrypt_file, PET_EXTENSION
 from encryption.file_crypto import EncryptionError, DecryptionError
 
 
+# =============================================================================
+# PETTrayApp - Main Application Class
+# =============================================================================
+
 class PETTrayApp(ctk.CTk):  # type: ignore[misc]
     """Minimal application window for PET with system tray integration."""
+
+    # =========================================================================
+    # Initialization and Window Setup
+    # =========================================================================
 
     def __init__(self, file_path: str | None = None, operation: str | None = None) -> None:
         super().__init__()
@@ -57,6 +65,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         """Remove all widgets from window."""
         for widget in self.winfo_children():
             widget.destroy()
+
+    # =========================================================================
+    # Authentication and Initial Setup
+    # =========================================================================
 
     def authenticate_and_process(self) -> None:
         """Authenticate user for file operations."""
@@ -145,6 +157,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         else:
             messagebox.showerror("Error", "Failed to initialize.")
 
+    # =========================================================================
+    # Unlock Screen
+    # =========================================================================
+
     def show_unlock_screen(self) -> None:
         """Display unlock screen."""
         self.clear_window()
@@ -198,6 +214,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             messagebox.showerror("Error", "Invalid password.")
             self.unlock_password_entry.delete(0, 'end')
 
+    # =========================================================================
+    # Main Menu Screen
+    # =========================================================================
+
     def show_main_screen(self) -> None:
         """Display main menu screen."""
         self.clear_window()
@@ -245,6 +265,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         )
         exit_btn.grid(row=3, column=0, padx=20, pady=(30, 20))
 
+    # =========================================================================
+    # File Selection Dialogs
+    # =========================================================================
+
     def encrypt_file_dialog(self) -> None:
         """Open file dialog to select file for encryption."""
         file_path = filedialog.askopenfilename(
@@ -281,6 +305,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         self.file_path = file_path
         self.operation = "decrypt"
         self.show_decrypt_options()
+
+    # =========================================================================
+    # Encryption/Decryption Options and Output Path Selection
+    # =========================================================================
 
     def show_encrypt_options(self) -> None:
         """Show encryption options dialog."""
@@ -360,6 +388,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         # Perform decryption
         self.perform_decryption(output_file)
 
+    # =========================================================================
+    # File Encryption and Decryption Operations
+    # =========================================================================
+
     def perform_encryption(self, output_path: str) -> None:
         """Perform file encryption."""
         if not self.file_path:
@@ -424,6 +456,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
             messagebox.showerror("Decryption Error", f"Failed to decrypt: {e}")
             self.lock_and_exit()
 
+    # =========================================================================
+    # File Processing and Utility Methods
+    # =========================================================================
+
     def process_file(self) -> None:
         """Process file based on operation (called from command-line args)."""
         if not self.file_path:
@@ -461,6 +497,10 @@ class PETTrayApp(ctk.CTk):  # type: ignore[misc]
         self.quit()
 
 
+# =============================================================================
+# Entry Point
+# =============================================================================
+
 def run_gui_tray() -> None:
     """Main entry point for tray GUI interface."""
     # Parse command line arguments
@@ -484,6 +524,10 @@ def run_gui_tray() -> None:
     args = parser.parse_args()
     
     file_path = args.encrypt or args.decrypt
+    # Strip quotes from file path if present (from Windows shell)
+    if file_path:
+        file_path = file_path.strip('"').strip("'")
+    
     operation = "encrypt" if args.encrypt else ("decrypt" if args.decrypt else None)
     
     app = None
