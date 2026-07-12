@@ -19,6 +19,14 @@ class CredentialManager:
 
         keyring.set_password(self.credential_name(user_uuid), user_uuid, private_key)
 
+    def store_private_key_verified(self, user_uuid: str, private_key: str) -> None:
+        """Store a private key and verify that the backend can read it back."""
+
+        self.store_private_key(user_uuid, private_key)
+        stored_private_key = self.get_private_key(user_uuid)
+        if stored_private_key != private_key:
+            raise RuntimeError("Private key storage is unavailable on this machine.")
+
     def get_private_key(self, user_uuid: str) -> str | None:
         """Retrieve a stored private key for a user UUID."""
 

@@ -202,7 +202,7 @@ class UserManager:
                         normalized_created_at,
                     ),
                 )
-                self.credential_manager.store_private_key(
+                self.credential_manager.store_private_key_verified(
                     normalized_uuid,
                     normalized_private_key,
                 )
@@ -211,6 +211,7 @@ class UserManager:
                     "DELETE FROM users WHERE uuid = ?",
                     (normalized_uuid,),
                 )
+                self.credential_manager.delete_private_key(normalized_uuid)
                 raise
         else:
             try:
@@ -228,7 +229,7 @@ class UserManager:
                         normalized_uuid,
                     ),
                 )
-                self.credential_manager.store_private_key(
+                self.credential_manager.store_private_key_verified(
                     normalized_uuid,
                     normalized_private_key,
                 )
@@ -247,6 +248,7 @@ class UserManager:
                         normalized_uuid,
                     ),
                 )
+                self.credential_manager.delete_private_key(normalized_uuid)
                 raise
 
         user = self.get_user_by_uuid(normalized_uuid)
