@@ -140,6 +140,121 @@ class UserManager:
             created_at=record["created_at"],
         )
 
+    def import_user_identity(
+        self,
+        username: str,
+        user_uuid: str,
+        public_key: str,
+        private_key: str,
+        password: str,
+        created_at: str,
+    ) -> User:
+        """Import a user identity while keeping the UUID and keys stable."""
+
+        normalized_username = username.strip()
+        normalized_uuid = user_uuid.strip()
+        normalized_public_key = public_key.strip()
+        normalized_private_key = private_key.strip()
+        normalized_created_at = (
+            created_at.strip() or datetime.now(timezone.utc).isoformat()
+        )
+
+        if not normalized_username:
+            raise ValueError("Username cannot be empty.")
+        if not normalized_uuid:
+            raise ValueError("UUID cannot be empty.")
+        if not normalized_public_key:
+            raise ValueError("Public key cannot be empty.")
+        if not normalized_private_key:
+            raise ValueError("Private key cannot be empty.")
+        if not password:
+            raise ValueError("Password cannot be empty.")
+
+        existing_by_uuid = self.database_manager.fetch_one(
+            """
+            SELECT id, uuid, username, password_hash, public_key, created_at
+            FROM users
+            WHERE uuid = ?
+            """,
+            (normalized_uuid,),
+        )
+        conflicting_username = self.get_user_by_username(normalized_username)
+        if (
+            conflicting_username is not None
+            and conflicting_username.uuid != normalized_uuid
+        ):
+            raise ValueError("Username already exists.")
+
+        password_hash = self.password_manager.hash_password(password)
+
+        if existing_by_uuid is None:
+            try:
+                self.database_manager.execute(
+                    """
+                    INSERT INTO users (uuid, username, password_hash, public_key, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        normalized_uuid,
+                        normalized_username,
+                        password_hash,
+                        normalized_public_key,
+                        normalized_created_at,
+                    ),
+                )
+                self.credential_manager.store_private_key(
+                    normalized_uuid,
+                    normalized_private_key,
+                )
+            except Exception:
+                self.database_manager.execute(
+                    "DELETE FROM users WHERE uuid = ?",
+                    (normalized_uuid,),
+                )
+                raise
+        else:
+            try:
+                self.database_manager.execute(
+                    """
+                    UPDATE users
+                    SET username = ?, password_hash = ?, public_key = ?, created_at = ?
+                    WHERE uuid = ?
+                    """,
+                    (
+                        normalized_username,
+                        password_hash,
+                        normalized_public_key,
+                        normalized_created_at,
+                        normalized_uuid,
+                    ),
+                )
+                self.credential_manager.store_private_key(
+                    normalized_uuid,
+                    normalized_private_key,
+                )
+            except Exception:
+                self.database_manager.execute(
+                    """
+                    UPDATE users
+                    SET username = ?, password_hash = ?, public_key = ?, created_at = ?
+                    WHERE uuid = ?
+                    """,
+                    (
+                        existing_by_uuid["username"],
+                        existing_by_uuid["password_hash"],
+                        existing_by_uuid["public_key"],
+                        existing_by_uuid["created_at"],
+                        normalized_uuid,
+                    ),
+                )
+                raise
+
+        user = self.get_user_by_uuid(normalized_uuid)
+        if user is None:
+            raise RuntimeError("User was imported but could not be reloaded.")
+
+        return user
+
     def username_exists(self, username: str) -> bool:
         """Return True when a username already exists."""
 
