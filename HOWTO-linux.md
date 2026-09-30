@@ -1,0 +1,1 @@
+apt install -y gnome-keyring libsecret-1-0
