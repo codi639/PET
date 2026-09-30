@@ -33,7 +33,8 @@ from core.decryption_manager import DecryptionManager
 from core.encryption_manager import EncryptionManager
 from core.petkey_manager import PetKeyManager
 from core.user_manager import UserManager
-from models.user import User
+
+# from models.user import User
 
 T = TypeVar("T", bound=Callable[..., Any])
 
@@ -42,13 +43,18 @@ def create_web_app(user_manager: UserManager) -> Flask:
     """Create the server-rendered PET web application."""
 
     app = Flask(__name__, template_folder="templates", static_folder="static")
-    app.config.update(
-        SECRET_KEY=secrets.token_bytes(32),
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SECURE=True,
-        SESSION_COOKIE_SAMESITE="Strict",
-        MAX_CONTENT_LENGTH=256 * 1024 * 1024,
-    )
+    # app.config.update(
+    #     SECRET_KEY=secrets.token_bytes(32),
+    #     SESSION_COOKIE_HTTPONLY=True,
+    #     SESSION_COOKIE_SECURE=True,
+    #     SESSION_COOKIE_SAMESITE="Strict",
+    #     MAX_CONTENT_LENGTH=256 * 1024 * 1024,
+    # )
+    app.config["SECRET_KEY"] = secrets.token_bytes(32)
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+    app.config["MAX_CONTENT_LENGTH"] = 256 * 1024 * 1024
 
     @app.before_request
     def prepare_request() -> None:
