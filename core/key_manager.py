@@ -11,7 +11,7 @@ from nacl.encoding import Base64Encoder, RawEncoder
 from nacl.public import PrivateKey
 
 
-@dataclass(slots=True)
+@dataclass(slots=True)  # got unexpected keyword argument 'slots' error in python <3.9
 class GeneratedKeyPair:
     """Container for a generated UUID and X25519 key pair."""
 
