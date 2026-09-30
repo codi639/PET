@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Workspace{% endblock %}
+{% block content %}
+<section class="workspace-head">
+    <div>
+        <p class="eyebrow">LOCAL WORKSPACE</p>
+        <h1>Good to see you, <em>{{ current_user.username }}.</em></h1>
+    </div>
+    <div class="identity-chip"><span class="status-dot"></span><span>Keyring connected</span></div>
+</section>
+<section class="tool-grid">
+    <article class="tool-panel tool-panel-dark">
+        <div class="panel-icon">↑</div>
+        <div class="panel-kicker">Protect a file</div>
+        <h2>Encrypt</h2>
+        <p>Wrap a file in a recipient-aware <strong>.pet</strong> envelope. The original is replaced only after encryption succeeds.</p>
+        <form method="post" action="{{ url_for('encrypt_file') }}" enctype="multipart/form-data" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="file-label">Choose file<input name="input_file" type="file" required></label>
+            <label>Additional recipients <span class="label-hint">comma-separated usernames</span><input name="recipients" placeholder="alex, sam"></label>
+            <button class="button button-light" type="submit">Encrypt and download <span>↗</span></button>
+        </form>
+    </article>
+    <article class="tool-panel tool-panel-light">
+        <div class="panel-icon panel-icon-light">↓</div>
+        <div class="panel-kicker">Open a protected file</div>
+        <h2>Decrypt</h2>
+        <p>Use your private key from the system keyring to restore the original file.</p>
+        <form method="post" action="{{ url_for('decrypt_file') }}" enctype="multipart/form-data" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="file-label">Choose .pet file<input name="pet_file" type="file" accept=".pet" required></label>
+            <button class="button button-ink" type="submit">Decrypt and download <span>↗</span></button>
+        </form>
+    </article>
+</section>
+<section class="lower-grid">
+    <article class="plain-section">
+        <div class="section-heading"><div><p class="eyebrow">PEOPLE</p><h2>Known identities</h2></div><span class="count">{{ users|length }}</span></div>
+        <div class="user-list">
+            {% for user in users %}
+            <div class="user-row"><span class="avatar">{{ user.username[0]|upper }}</span><span><strong>{{ user.username }}</strong><small>{{ user.uuid }}</small></span>{% if user.uuid == current_user.uuid %}<span class="you-tag">YOU</span>{% endif %}</div>
+            {% else %}<p class="muted">No identities yet.</p>{% endfor %}
+        </div>
+    </article>
+    <article class="plain-section identity-actions">
+        <div class="section-heading"><div><p class="eyebrow">PORTABILITY</p><h2>Identity files</h2></div></div>
+        <p class="muted">Your .petkey file is encrypted with a separate passphrase. It carries the private identity, never a database record.</p>
+        <form method="post" action="{{ url_for('export_identity') }}" class="stack-form compact-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label>Export passphrase<input name="passphrase" type="password" required></label>
+            <label>Confirm passphrase<input name="confirm_passphrase" type="password" required></label>
+            <button class="button button-ink" type="submit">Export .petkey <span>↓</span></button>
+        </form>
+        <hr>
+        <form method="post" action="{{ url_for('import_identity') }}" enctype="multipart/form-data" class="stack-form compact-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label>Import .petkey<input name="petkey_file" type="file" accept=".petkey" required></label>
+            <label>File passphrase<input name="passphrase" type="password" required></label>
+            <label>New account password<input name="password" type="password" required></label>
+            <label>Confirm account password<input name="confirm_password" type="password" required></label>
+            <button class="button button-outline" type="submit">Import identity <span>↑</span></button>
+        </form>
+    </article>
+</section>
+{% endblock %}

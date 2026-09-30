@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import argparse
 from pathlib import Path
 
 project_root = Path(__file__).resolve().parents[1]
@@ -12,6 +13,7 @@ if str(project_root) not in sys.path:
 from core.database import DatabaseManager
 from core.user_manager import UserManager
 from ui.cli import run_console
+from app.web import run_web_server
 
 
 def build_user_manager() -> UserManager:
@@ -23,10 +25,21 @@ def build_user_manager() -> UserManager:
     return UserManager(database_manager)
 
 
-def main() -> None:
-    """Start the console application."""
+def main(arguments: list[str] | None = None) -> None:
+    """Start the console or local web application."""
+
+    parser = argparse.ArgumentParser(description="Run PET.")
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="start the local HTTPS web application instead of the CLI",
+    )
+    options = parser.parse_args(arguments)
 
     user_manager = build_user_manager()
+    if options.web:
+        run_web_server(user_manager)
+        return
     run_console(user_manager)
 
 

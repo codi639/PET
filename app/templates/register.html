@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Create identity{% endblock %}
+{% block content %}
+<section class="auth-layout">
+    <div class="auth-intro compact-intro">
+        <p class="eyebrow">A NEW IDENTITY</p>
+        <h1>Start with<br><em>privacy.</em></h1>
+        <p class="lede">Your private key is handed to the system keyring. PET keeps only the public identity and account metadata in its database.</p>
+        <a class="back-link" href="{{ url_for('login') }}">← Back to sign in</a>
+    </div>
+    <div class="form-panel">
+        <div class="panel-kicker">First setup</div>
+        <h2>Create identity</h2>
+        <p class="muted">Choose a name for this device.</p>
+        <form method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label>Username<input name="username" autocomplete="username" required autofocus></label>
+            <label>Password<input name="password" type="password" autocomplete="new-password" required></label>
+            <label>Confirm password<input name="confirm_password" type="password" autocomplete="new-password" required></label>
+            <button class="button button-primary" type="submit">Create identity <span>→</span></button>
+        </form>
+    </div>
+</section>
+{% endblock %}
